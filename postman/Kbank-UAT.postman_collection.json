@@ -1,0 +1,99 @@
+{
+  "info": {
+    "_postman_id": "5d79417a-56ae-4a2c-b85f-6a57a4c29b10",
+    "name": "KBank Bill Payment UAT (Mock Service)",
+    "description": "Postman requests for the repository's UAT-only mock endpoints. Import this collection into Postman. Requests target the Railway service URL and use the repository's default test bill values. This is not a production payment integration.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "https://kbank-billpayment.up.railway.app", "type": "string" },
+    { "key": "billerId", "value": "98499", "type": "string" },
+    { "key": "reference1", "value": "300000025751", "type": "string" },
+    { "key": "reference2", "value": "1733084", "type": "string" },
+    { "key": "tranAmount", "value": "120.00", "type": "string" },
+    { "key": "terminalNo", "value": "UAT0000001", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Inquiry",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"functionName\": \"BillLookup\",\n  \"transactionId\": \"{{transactionId}}\",\n  \"transactionDateTime\": \"{{transactionDateTime}}\",\n  \"billerType\": \"\",\n  \"billerId\": \"{{billerId}}\",\n  \"terminalNo\": \"{{terminalNo}}\",\n  \"promptPayReferenceNumber\": \"\",\n  \"channelCode\": \"MOB\",\n  \"tranAmount\": \"{{tranAmount}}\",\n  \"senderBankCode\": \"Kbank\",\n  \"reference1\": \"{{reference1}}\",\n  \"reference2\": \"{{reference2}}\",\n  \"reference3\": \"\",\n  \"apiKey\": \"\",\n  \"language\": \"TH\",\n  \"additional\": {\n    \"payerFee\": \"\",\n    \"billerFee\": \"\",\n    \"transferWithTax\": \"\",\n    \"fromProxyValue\": \"\",\n    \"fromProxyType\": \"\",\n    \"senderTaxID\": \"\",\n    \"senderAcctName\": \"\",\n    \"vatRates\": \"\",\n    \"vat\": \"\",\n    \"typeofTaxIncome\": \"\",\n    \"withholdingTaxRates\": \"\",\n    \"withholdingTax\": \"\",\n    \"withholdingTaxConditions\": \"\",\n    \"settlementDate\": \"\",\n    \"promptPayFlag\": \"\",\n    \"typeofSender\": \"\",\n    \"dueDate\": \"\",\n    \"rtpReference\": \"\"\n  }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/inquiry", "host": ["{{baseUrl}}"], "path": ["inquiry"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const now = new Date();",
+              "const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(now);",
+              "const values = Object.fromEntries(parts.map(part => [part.type, part.value]));",
+              "const millis = String(now.getMilliseconds()).padStart(3, '0');",
+              "pm.variables.set('transactionDateTime', `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}.${millis}+07:00`);",
+              "pm.variables.set('transactionId', `UAT_INQ_${now.getTime()}`);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP request succeeded', function () { pm.expect(pm.response.code).to.equal(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Inquiry response has a bank response code', function () { pm.expect(body).to.have.property('responseCode'); });",
+              "pm.test('Inquiry is successful or reference was already paid', function () { pm.expect(['0000', '0002']).to.include(body.responseCode); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"functionName\": \"BillPayment\",\n  \"transactionId\": \"{{transactionId}}\",\n  \"transactionDateTime\": \"{{transactionDateTime}}\",\n  \"billerType\": \"\",\n  \"billerId\": \"{{billerId}}\",\n  \"terminalNo\": \"{{terminalNo}}\",\n  \"promptPayReferenceNumber\": \"\",\n  \"channelCode\": \"MOB\",\n  \"tranAmount\": \"{{tranAmount}}\",\n  \"senderBankCode\": \"Kbank\",\n  \"isRetry\": \"0\",\n  \"reference1\": \"{{reference1}}\",\n  \"reference2\": \"{{reference2}}\",\n  \"reference3\": \"\",\n  \"apiKey\": \"\",\n  \"additional\": {\n    \"customerFee\": \"\",\n    \"partnerFee\": \"\",\n    \"sponsorBankFee\": \"\",\n    \"transferWithTax\": \"\",\n    \"fromProxyValue\": \"\",\n    \"fromProxyType\": \"\",\n    \"senderReferenceNo\": \"\",\n    \"senderTaxID\": \"\",\n    \"senderAcctName\": \"\",\n    \"receiverTaxID\": \"\",\n    \"vatRates\": \"\",\n    \"vat\": \"\",\n    \"typeofTaxIncome\": \"\",\n    \"withholdingTaxRates\": \"\",\n    \"withholdingTax\": \"\",\n    \"withholdingTaxConditions\": \"\",\n    \"settlementDate\": \"\",\n    \"promptPayFlag\": \"\",\n    \"typeofSender\": \"\",\n    \"typeofReceiver\": \"\",\n    \"dueDate\": \"\",\n    \"rtpReference\": \"\"\n  }\n}",
+          "options": { "raw": { "language": "json" } }
+        },
+        "url": { "raw": "{{baseUrl}}/payment", "host": ["{{baseUrl}}"], "path": ["payment"] }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const now = new Date();",
+              "const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(now);",
+              "const values = Object.fromEntries(parts.map(part => [part.type, part.value]));",
+              "const millis = String(now.getMilliseconds()).padStart(3, '0');",
+              "pm.variables.set('transactionDateTime', `${values.year}-${values.month}-${values.day}T${values.hour}:${values.minute}:${values.second}.${millis}+07:00`);",
+              "pm.variables.set('transactionId', `UAT_PAY_${now.getTime()}`);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP request succeeded', function () { pm.expect(pm.response.code).to.equal(200); });",
+              "const body = pm.response.json();",
+              "pm.test('Payment response is successful', function () { pm.expect(body.responseCode).to.equal('0000'); });"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}
